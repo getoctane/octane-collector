@@ -1,0 +1,13 @@
+image:
+  repository: us.gcr.io/octane-public/octane-collector
+  tag: 0.0.1
+
+ledgerHost: "http://octane-ledger:8080"
+clusterKey: "43ba414accffbe30621ea4f27702161962b42a2f1dd11c02f0d8e6f810a840f6"
+
+queue:
+  storageClassName: standard
+  sizeGB: 10
+  pushIntervalMinutes: 1
+
+enableK8SMetricsSurveyor: "true"

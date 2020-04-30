@@ -1,0 +1,20 @@
+services:
+    octane-collector:
+      image: us.gcr.io/octane-public/octane-collector:0.0.1
+      environment:
+        LEDGER_HOST: 'http://http://34.67.162.97:8080/'
+        CLUSTER_KEY: '5ce10fbce562f460a245c7f5bcd6fd93006858f329e294c8ae5a94c21e3b1254'
+        PROMETHEUS_HOST: 'postgres-db'
+        QUEUE_PUSH_INTERVAL_MINS: '1'
+        QUEUE_DIR: '/collector/queue'
+        ENABLE_K8S_METRICS_SURVEYOR: 'true'
+      ports:
+        - 8081:8081
+      volumes:
+        - 'octane-collector-data:/collector/queue'
+
+
+  volumes:
+    octane-collector-data:
+      labels:
+        shipyard.deploy.disk.size: 10Gi
