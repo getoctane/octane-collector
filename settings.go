@@ -23,6 +23,7 @@ var (
 	kubeconfig string
 
 	enableK8SMetricsSurveyor bool
+	kubeStateMetricsHost     string // Required for surveying kube-state-metrics
 )
 
 func requireEnvVar(varName string) string {
@@ -66,4 +67,5 @@ func init() {
 	kubeconfig = os.Getenv("KUBECONFIG")
 
 	enableK8SMetricsSurveyor = os.Getenv("ENABLE_K8S_METRICS_SURVEYOR") == "true"
+	kubeStateMetricsHost = os.Getenv("KUBE_STATE_METRICS_HOST")
 }

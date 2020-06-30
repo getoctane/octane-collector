@@ -14,7 +14,7 @@ const (
 )
 
 func startSurveying(lc *ledger.Client) {
-	s, err := surveyors.NewK8SMetricsSurveyor(kubeconfig)
+	s, err := surveyors.NewK8SMetricsSurveyor(kubeconfig, kubeStateMetricsHost)
 	if err != nil {
 		panic(err)
 	}

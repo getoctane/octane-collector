@@ -1,6 +1,8 @@
 package main
 
-import "github.com/cloudptio/octane/collector/ledger"
+import (
+	"github.com/cloudptio/octane/collector/ledger"
+)
 
 func main() {
 	lc := &ledger.Client{
