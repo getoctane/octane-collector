@@ -50,11 +50,6 @@ func (s *K8SMetricsSurveyor) GetMetricsServerMetrics() ([]*ledger.MeasurementLis
 		return nil, err
 	}
 
-	nodeMetricsList, err := s.km.MetricsV1beta1().NodeMetricses().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
 	nodes, err := s.k.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -66,7 +61,7 @@ func (s *K8SMetricsSurveyor) GetMetricsServerMetrics() ([]*ledger.MeasurementLis
 
 	nodeTypes := make(map[string][]corev1.Node)
 	for _, node := range nodes.Items {
-		nodeType := node.Labels["beta.kubernetes.io/node-type"]
+		nodeType := node.Labels["beta.kubernetes.io/instance-type"]
 		if _, exists := nodeTypes[nodeType]; exists {
 			nodeTypes[nodeType] = append(nodeTypes[nodeType], node)
 			continue
@@ -93,7 +88,7 @@ func (s *K8SMetricsSurveyor) GetMetricsServerMetrics() ([]*ledger.MeasurementLis
 			Labels:    sharedLabels,
 			Measurements: []*ledger.Measurement{
 				&ledger.Measurement{
-					Value: float64(len(nodeMetricsList.Items)),
+					Value: float64(len(nodes)),
 					Time:  timestamp,
 				},
 			},
