@@ -89,7 +89,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: octane-collector-auth-reader
-  namespace: octane-collector
+  namespace: kube-system
   labels:
     app: octane-collector
     release: octane-collector
@@ -223,8 +223,8 @@ spec:
             - --cert-dir=/tmp
             - --logtostderr
             - --secure-port=8443
-            - --kubelet-preferred-address-types=InternalIP # Need for dev only.
-            - --kubelet-insecure-tls=true # Need for dev only.
+            # - --kubelet-preferred-address-types=InternalIP # Need for dev only.
+            # - --kubelet-insecure-tls=true # Need for dev only.
           ports:
             - containerPort: 8443
               name: https
@@ -317,7 +317,7 @@ spec:
             - name: LEDGER_HOST
               value: "http://a85b1fb13a08e44849983228d0fc524b-1233833828.us-east-2.elb.amazonaws.com:8080"
             - name: CLUSTER_KEY
-              value: "7afc5df10a92ac30a59daa9484088ec710d6c0a4200b7600ca718e92f96e3300"
+              value: "c5fe50bd375a12ceeecf57f236667d81164375e978d4b5bc1da98125f96c1485"
             - name: QUEUE_PUSH_INTERVAL_MINS
               value: "1"
             - name: QUEUE_DIR
