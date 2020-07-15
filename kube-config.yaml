@@ -223,8 +223,8 @@ spec:
             - --cert-dir=/tmp
             - --logtostderr
             - --secure-port=8443
+            - --kubelet-insecure-tls=true
             # - --kubelet-preferred-address-types=InternalIP # Need for dev only.
-            # - --kubelet-insecure-tls=true # Need for dev only.
           ports:
             - containerPort: 8443
               name: https
@@ -317,7 +317,7 @@ spec:
             - name: LEDGER_HOST
               value: "http://a85b1fb13a08e44849983228d0fc524b-1233833828.us-east-2.elb.amazonaws.com:8080"
             - name: CLUSTER_KEY
-              value: "c5fe50bd375a12ceeecf57f236667d81164375e978d4b5bc1da98125f96c1485"
+              value: "648d04eef8a2d897c2952b2acf78c5d0013d68e5682fee68446237a35f6f8793"
             - name: QUEUE_PUSH_INTERVAL_MINS
               value: "1"
             - name: QUEUE_DIR
