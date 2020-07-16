@@ -315,9 +315,9 @@ spec:
           imagePullPolicy: Always
           env:
             - name: LEDGER_HOST
-              value: "http://a85b1fb13a08e44849983228d0fc524b-1233833828.us-east-2.elb.amazonaws.com:8080"
+              value: "https://api.demo.getoctane.io"
             - name: CLUSTER_KEY
-              value: "648d04eef8a2d897c2952b2acf78c5d0013d68e5682fee68446237a35f6f8793"
+              value: "4266ba7864af885edc99bc18d2bb9f84b9a7d49849919d88cfb30447820cb2c4"
             - name: QUEUE_PUSH_INTERVAL_MINS
               value: "1"
             - name: QUEUE_DIR
