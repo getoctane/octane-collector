@@ -4,7 +4,7 @@ import "strconv"
 
 type Meter struct {
 	ID              int64  `json:"id"`
-	Type            string `json:"type"`
+	Type            string `json:"meter_type"`
 	Value           string `json:"value"`
 	TimespanMinutes int64  `json:"timespan_minutes"`
 }
