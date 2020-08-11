@@ -59,12 +59,15 @@ func startQueue(q *dque.DQue) {
 			err := dequeueAndPush(q)
 			if err == nil {
 				pushCount++
+
+				fmt.Printf("%d...", pushCount)
+
 				continue
 			}
 			if err == dque.ErrEmpty {
 				break
 			}
-			fmt.Printf("Error dequeing and pushing: %s", err.Error())
+			fmt.Printf("Error dequeing and pushing: %s\n", err.Error())
 			break
 		}
 

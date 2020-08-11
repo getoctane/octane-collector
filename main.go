@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cloudptio/octane/collector/ledger"
+	"github.com/getoctane/octane-collector/ledger"
 )
 
 func main() {

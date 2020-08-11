@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/cloudptio/octane/collector/ledger"
-	"github.com/cloudptio/octane/collector/meter_query"
+	"github.com/getoctane/octane-collector/ledger"
+	"github.com/getoctane/octane-collector/meter_query"
 )
 
 func querierFor(m *ledger.Meter) (meter_query.Querier, error) {
