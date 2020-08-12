@@ -3,7 +3,7 @@
 
 # Octane: Kubernetes Cost Engine
 
-Octane helps Development Teams easily  **manage their cloud spend on Kubernetes** Octane provides detailed cost attribution of running infrastructure (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
+Octane helps Development Teams easily  **manage their cloud spend on Kubernetes**. Octane provides detailed cost attribution of running infrastructure (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
 
 Octane makes it easier to get a real time view into financial spend on your cloud infrastructure. It works on any main cloud provider (AWS, GCP, Azure).
 
