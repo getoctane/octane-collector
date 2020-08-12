@@ -1,48 +1,35 @@
-# Octane Collector
-The collector is a gateway to the Octane Ledger service:
-* Polling - reads meter configs from the Octane Ledger service, executes meter readings accordingly, and sends results to the service
-* Push - allows collocated services to push custom measurements by proxying their requests to the Octane Ledger service
+<p align="center"><img src="octane-logo.png" alt="Octane Logo"></p>
 
-# Installation
-A docker image is publicly available here:
-us.gcr.io/octane-public/octane-collector
+# Octane: Kubernetes Cost Engine
 
-Start a container with the image, setting the appropriate ENV variables:
-1. LEDGER_HOST - Octane Legder Service host (i.e., "http://ledger.getoctane.io")
-2. CLUSTER_KEY - API Key provided by Octane for new clusters
-3. PROMETHEUS_HOST (optional) - Prometheus host name
-4. QUEUE_PUSH_INTERVAL_MINS - Frequency with which collector should push measurements to service
-5. QUEUE_DIR - Path to directory where collector may store queue of measurements
-6. ENABLE_K8S_METRICS_SURVEYOR - Whether the collector should automatically query the kubernetes metrics api for usage metrics
+Octane help Development Teams easily  **manage their cloud spend on Kubernetes**Octane provideds detailed cost attribution of Infrastructure consumption (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
 
-# Usage
-## Polling mechanism
-Define meters in the Octane Ledger service. Send HTTP POST request to the Octane Ledger service's /vendor/meters endpoint.  The HEADER should include Authorization with the vendor API Key. The body should be JSON with the following format:
-```
-{
-    "meter_name": <name_identifying_meter>,
-    "meter_type": <type_of_meter>,
-    "meter_value": <query_for_meter>
-}
-```
+Octane makes it easier to get a real time view into financial spend on your cloud infrastructure. It works on any main cloud provider (AWS, GCP, Azure).
 
-At this time, the collector can only poll from Prometheus for meters of type 'prometheus'.
+## Core Features
 
-## Push mechanism
-Send HTTP POST requests to the collector's /instance/measurements endpoint.  The body should be JSON with the following format:
-```
-{
-    "meter_name": <name_identifying_meter>,
-    "measurements": [{"time": <measurment_time>, "value": <measurment_value>}],
-    "namespace": <optional_namespace_name>,
-    "pod": <optional_pod_name>,
-    "labels": <optional_labels>
-}
+  - Detailed cost attribution for pods per application
+  - consolidation of spend across multiple clusters (e.g. aws + gcp cluster cost in a single pane)
+  - Filter spend by pod, namespace, cluster
+  - Filter spend by Compute and Storage
+  - Get % changes day over day of spend changes
+  - Cost attribution by Teams (e.g. Security Team spent $400 today)
+  ** Coming Soon 
+  - GPU Attribution per pod
+  - Data Transfer Costs 
+
+## Installation
+
+Reach out to support@getoctane.io to get an octaneKey to begin using the cost engine.
+
+```bash
+sed -i 's/octanekey/linux/' kube-config.yaml
 ```
 
-Where labels is a dictionary in the format:
-```
-{
-    <label_name>: <label_value>
-}
-``` 
+## Usage
+
+1) Head over to https://www.cloud.getoctane.io
+
+2) Enter the username and password given to you by the Octane Support Team
+
+3) Voila! You should see real-time cost data coming in.
