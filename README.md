@@ -3,7 +3,7 @@
 
 # Octane: Kubernetes Cost Engine
 
-Octane help Development Teams easily  **manage their cloud spend on Kubernetes**Octane provideds detailed cost attribution of Infrastructure consumption (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
+Octane helps Development Teams easily  **manage their cloud spend on Kubernetes** Octane provides detailed cost attribution of running infrastructure (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
 
 Octane makes it easier to get a real time view into financial spend on your cloud infrastructure. It works on any main cloud provider (AWS, GCP, Azure).
 
@@ -13,7 +13,7 @@ Octane makes it easier to get a real time view into financial spend on your clou
   - consolidation of spend across multiple clusters (e.g. aws + gcp cluster cost in a single pane)
   - Filter spend by pod, namespace, cluster
   - Filter spend by Compute and Storage
-  - Get % changes day over day of spend changes
+  - Get % cost changes day over day
   - Cost attribution by Teams (e.g. Security Team spent $400 today)
   ** Coming Soon 
   - GPU Attribution per pod
@@ -21,10 +21,10 @@ Octane makes it easier to get a real time view into financial spend on your clou
 
 ## Installation
 
-Reach out to support@getoctane.io to get an OCTANE_PROVIDED_KEY to begin using the cost engine. Replace the OCTANE_PROVIDED_KEY with the octane key provided by support. Then execute the command
+Reach out to support@getoctane.io to get an OCTANE_CLUSTER_KEY to begin using the cost engine. Replace the OCTANE_CLUSTER_KEY with the octane key provided by support. Then execute the command
 
 ```bash
-sed -e "s/REPLACE_CLUSTER_KEY/OCTANE_PROVIDED_KEY/" < install-octane-collector.yaml > install-octane-collector.yaml
+sed -e "s/REPLACE_CLUSTER_KEY/OCTANE_CLUSTER_KEY/" < install-octane-collector.yaml > install-octane-collector.yaml
 ```
 
 Once you have updated the yaml file with the appropriate octane key, install octane into your cluster to begin getting cost:
