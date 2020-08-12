@@ -1,4 +1,5 @@
 <p align="center"><img src="octane-logo.png" alt="Octane Logo"></p>
+![image info](octane-logo.png)
 
 # Octane: Kubernetes Cost Engine
 
