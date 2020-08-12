@@ -10,14 +10,13 @@ Octane makes it easier to get a real time view into financial spend on your clou
 ## Core Features
 
   - Detailed cost attribution for pods per application
-  - consolidation of spend across multiple clusters (e.g. aws + gcp cluster cost in a single pane)
+  - Consolidation of spend across multiple clusters (e.g. aws + gcp cluster cost in a single pane)
   - Filter spend by pod, namespace, cluster
   - Filter spend by Compute and Storage
   - Get % cost changes day over day
-  ** Coming Soon **
   - Cost attribution by Teams (e.g. Security Team spent $400 today) 
-  - GPU Attribution per pod
-  - Data Transfer Costs 
+  - GPU Attribution per pod (** Coming Soon **)
+  - Data Transfer Costs (** Coming Soon **)
 
 ## Installation
 
