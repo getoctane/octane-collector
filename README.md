@@ -36,6 +36,6 @@ kubectl apply -f install-octane-collector.yaml
 
 2) Enter the username and password given to you by the Octane Support Team
 
-3) Voila! You should see real-time cost data coming in. [NOTE: it will take roughly 5 minutes for data to populating in UI]
+3) Voila! You should see real-time cost data coming in. [NOTE: it will take roughly 5 minutes for the data to start populating in UI]
 
 <p align="center"><img src="octane-dashboard.png" alt="Octane Dashboard"></p>
