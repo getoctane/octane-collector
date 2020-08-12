@@ -317,7 +317,7 @@ spec:
             - name: LEDGER_HOST
               value: "https://api.demo.getoctane.io"
             - name: CLUSTER_KEY
-              value: "4266ba7864af885edc99bc18d2bb9f84b9a7d49849919d88cfb30447820cb2c4"
+              value: "REPLACE_CLUSTER_KEY"
             - name: QUEUE_PUSH_INTERVAL_MINS
               value: "1"
             - name: QUEUE_DIR
