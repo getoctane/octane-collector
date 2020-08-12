@@ -32,7 +32,7 @@ kubectl apply -f install-octane-collector.yaml
 ```
 ## Usage
 
-1) Head over to https://www.cloud.getoctane.io
+1) Head over to https://cloud.getoctane.io
 
 2) Enter the username and password given to you by the Octane Support Team
 
