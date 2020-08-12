@@ -42,10 +42,9 @@ func (s *KubeNetcSurveyor) getKubeNetcMetrics(host string) ([]*ledger.Measuremen
 		default:
 			continue
 		}
-
 		for _, m := range mf.GetMetric() {
 
-			value := m.GetCounter().GetValue()
+			value := m.GetGauge().GetValue()
 
 			if value == 0 {
 				continue
@@ -76,7 +75,6 @@ func (s *KubeNetcSurveyor) getKubeNetcMetrics(host string) ([]*ledger.Measuremen
 			measurementLists = append(measurementLists, measurmentList)
 		}
 	}
-
 	return measurementLists, nil
 }
 
