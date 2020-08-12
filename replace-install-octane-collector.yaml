@@ -1,0 +1,342 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    name: octane-collector
+  name: octane-collector
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: octane-collector
+    app.kubernetes.io/instance: octane-collector
+  name: octane-collector
+  namespace: octane-collector
+---
+# Cluster Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: octane-collector
+    app.kubernetes.io/instance: octane-collector
+  name: octane-collector
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "nodes/stats", "namespaces", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: octane-collector
+    app.kubernetes.io/instance: octane-collector
+  name: octane-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: octane-collector
+subjects:
+  - kind: ServiceAccount
+    name: octane-collector
+    namespace: octane-collector
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: octane-collector:system:auth-delegator
+  labels:
+    app: octane-collector
+    release: octane-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: octane-collector
+    namespace: octane-collector
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:octane-collector
+  labels:
+    app: octane-collector
+    release: octane-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:octane-collector
+subjects:
+  - kind: ServiceAccount
+    name: octane-collector
+    namespace: octane-collector
+---
+# Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: octane-collector-auth-reader
+  namespace: kube-system
+  labels:
+    app: octane-collector
+    release: octane-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: octane-collector
+    namespace: octane-collector
+---
+# Kube State Metrics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-state-metrics
+  namespace: octane-collector
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: "kube-state-metrics"
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  type: "ClusterIP"
+  ports:
+    - name: "http"
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: kube-state-metrics
+---
+# Kube State Metrics Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+  namespace: octane-collector
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: "kube-state-metrics"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/instance: "kube-state-metrics"
+    spec:
+      hostNetwork: false
+      serviceAccountName: octane-collector
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsUser: 65534
+      containers:
+        - name: kube-state-metrics
+          args:
+            - --metric-whitelist=kube_persistentvolumeclaim_info,kube_pod_spec_volumes_persistentvolumeclaims_info,kube_persistentvolumeclaim_resource_requests_storage_bytes
+            - --collectors=persistentvolumeclaims
+            - --collectors=pods
+          imagePullPolicy: IfNotPresent
+          image: "quay.io/coreos/kube-state-metrics:v1.9.7"
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+---
+# Metrics Server Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-server
+  namespace: octane-collector
+  labels:
+    app: metrics-server
+    release: metrics-server
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: https
+  selector:
+    app: metrics-server
+    release: metrics-server
+  type: ClusterIP
+---
+# Metrics Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: octane-collector
+  labels:
+    app: metrics-server
+    release: metrics-server
+spec:
+  selector:
+    matchLabels:
+      app: metrics-server
+      release: metrics-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: metrics-server
+        release: metrics-server
+    spec:
+      serviceAccountName: octane-collector
+      containers:
+        - name: metrics-server
+          image: "k8s.gcr.io/metrics-server-amd64:v0.3.6"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /metrics-server
+            - --cert-dir=/tmp
+            - --logtostderr
+            - --secure-port=8443
+            - --kubelet-insecure-tls=true
+            # - --kubelet-preferred-address-types=InternalIP # Need for dev only.
+          ports:
+            - containerPort: 8443
+              name: https
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+---
+# Metrics Server API Service
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.metrics.k8s.io
+  labels:
+    app: metrics-server
+    release: metrics-server
+spec:
+  service:
+    name: metrics-server
+    namespace: octane-collector
+  group: metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100
+---
+# Octane Collector Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: octane-collector
+  name: octane-collector
+  namespace: octane-collector
+spec:
+  selector:
+    app: octane-collector
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+---
+# Octane Collector Stateful Set
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: octane-collector
+  name: octane-collector
+  namespace: octane-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: octane-collector
+  serviceName: octane-collector
+  template:
+    metadata:
+      labels:
+        app: octane-collector
+    spec:
+      serviceAccountName: octane-collector
+      containers:
+        - name: ledger
+          image: "us.gcr.io/octane-public/octane-collector:0.0.1"
+          imagePullPolicy: Always
+          env:
+            - name: LEDGER_HOST
+              value: "https://api.demo.getoctane.io"
+            - name: CLUSTER_KEY
+              value: "REPLACE_CLUSTER_KEY"
+            - name: QUEUE_PUSH_INTERVAL_MINS
+              value: "1"
+            - name: QUEUE_DIR
+              value: /queue
+            - name: KUBE_STATE_METRICS_HOST
+              value: "http://kube-state-metrics:8080"
+            - name: ENABLE_K8S_METRICS_SURVEYOR
+              value: "true"
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: queue-data
+              mountPath: /queue
+  volumeClaimTemplates:
+    - metadata:
+        name: queue-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "10Gi"
