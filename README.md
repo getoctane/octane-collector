@@ -14,14 +14,14 @@ Octane makes it easier to get a real time view into financial spend on your clou
   - Filter spend by pod, namespace, cluster
   - Filter spend by Compute and Storage
   - Get % cost changes day over day
-  - Cost attribution by Teams (e.g. Security Team spent $400 today)
-  ** Coming Soon 
+  ** Coming Soon **
+  - Cost attribution by Teams (e.g. Security Team spent $400 today) 
   - GPU Attribution per pod
   - Data Transfer Costs 
 
 ## Installation
 
-Reach out to support@getoctane.io to get an OCTANE_CLUSTER_KEY to begin using the cost engine. Replace the OCTANE_CLUSTER_KEY with the octane key provided by support. Then execute the command
+Reach out to support@getoctane.io to get an OCTANE_CLUSTER_KEY to begin using the cost engine. Replace the OCTANE_CLUSTER_KEY with the octane key provided by support. Then execute the command:
 
 ```bash
 sed -e "s/REPLACE_CLUSTER_KEY/OCTANE_CLUSTER_KEY/" < install-octane-collector.yaml > install-octane-collector.yaml
