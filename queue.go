@@ -11,13 +11,22 @@ import (
 
 const (
 	segmentSize = 50
+
+	bulkPushSize = 100000
 )
 
 type LedgerRequest struct {
 	Method  string
 	Path    string
-	Body    []byte
 	Headers http.Header
+	Body    []byte
+}
+
+type BulkLedgerRequest struct {
+	Method  string
+	Path    string
+	Headers http.Header
+	Bodies  [][]byte
 }
 
 // ItemBuilder creates a new item and returns a pointer to it.
@@ -30,18 +39,16 @@ func newLedgerPushQueue() (*dque.DQue, error) {
 	return dque.NewOrOpen("ledger-push-queue", queueDir, segmentSize, LedgerRequestBuilder)
 }
 
-func dequeueAndPush(q *dque.DQue) error {
+func dequeue(q *dque.DQue) (*LedgerRequest, error) {
 	iface, err := q.Dequeue()
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	item, ok := iface.(*LedgerRequest)
 	if !ok {
-		return errors.New("Could not convert dequeued item to LedgerRequest")
+		return nil, errors.New("Could not convert dequeued item to LedgerRequest")
 	}
-
-	return pushLedgerRequest(item)
+	return item, nil
 }
 
 func startQueue(q *dque.DQue) {
@@ -54,21 +61,67 @@ func startQueue(q *dque.DQue) {
 
 		pushCount := 0
 
+		queueEmpty := false
+
 		// Loop through and process all queued items until empty
-		for {
-			err := dequeueAndPush(q)
-			if err == nil {
-				pushCount++
+		for !queueEmpty {
 
-				fmt.Printf("%d...", pushCount)
+			groupedBulks := make(map[string]*BulkLedgerRequest)
 
-				continue
+			for i := 0; i < bulkPushSize; i++ {
+				item, err := dequeue(q)
+				if err == dque.ErrEmpty {
+					queueEmpty = true
+					break
+				} else if err != nil {
+					// Break out of loop and push if there's a dequeueing error
+					fmt.Printf("Error dequeing: %s\n", err.Error())
+					break
+				}
+
+				if !(item.Method == "POST" && item.Path == "/instance/measurements") {
+					// Only measurements are bulk-able
+					if err := pushLedgerRequest(item); err != nil {
+						fmt.Printf("Error (single) pushing: %s\n", err.Error())
+					}
+					pushCount++
+
+				} else {
+					groupKey := item.Method + item.Path
+					if _, exists := groupedBulks[groupKey]; !exists {
+						groupedBulks[groupKey] = &BulkLedgerRequest{
+							Method:  item.Method,
+							Path:    item.Path,
+							Headers: item.Headers,
+							Bodies:  [][]byte{},
+						}
+					}
+					groupedBulks[groupKey].Bodies = append(groupedBulks[groupKey].Bodies, item.Body)
+				}
 			}
-			if err == dque.ErrEmpty {
-				break
+
+			for _, bulk := range groupedBulks {
+				bulkStr := ""
+				for _, bodyBytes := range bulk.Bodies {
+					bulkStr += string(bodyBytes)
+				}
+
+				lr := &LedgerRequest{
+					Method:  bulk.Method,
+					Path:    "/instance/multimeasurements",
+					Headers: bulk.Headers,
+					Body:    []byte(bulkStr),
+				}
+
+				// fmt.Println(bulkStr)
+
+				if err := pushLedgerRequest(lr); err != nil {
+					fmt.Printf("Error (bulk) pushing: %s\n", err.Error())
+					continue
+				}
+
+				pushCount += len(bulk.Bodies)
 			}
-			fmt.Printf("Error dequeing and pushing: %s\n", err.Error())
-			break
 		}
 
 		fmt.Printf("Dequeued and pushed %d items\n", pushCount)

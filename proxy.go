@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/getoctane/octane-collector/util"
 	"github.com/joncrlsn/dque"
 )
 
@@ -55,33 +56,15 @@ func pushLedgerRequest(lr *LedgerRequest) error {
 	// create a new url from the raw RequestURI sent by the client
 	url := fmt.Sprintf("%s://%s%s", ledgerScheme, ledgerHost, lr.Path)
 
-	proxyReq, err := http.NewRequest(lr.Method, url, bytes.NewReader(lr.Body))
-
 	// We may want to filter some headers, otherwise we could just use a shallow
 	// copy proxyReq.Header = req.Header
-	proxyReq.Header = make(http.Header)
+	headers := make(http.Header)
 	for h, val := range lr.Headers {
-		proxyReq.Header[h] = val
+		headers[h] = val
 	}
+	headers.Set("Authorization", clusterKey)
 
-	proxyReq.Header.Set("Authorization", clusterKey)
+	_, err := util.HttpRequest(lr.Method, url, headers, bytes.NewReader(lr.Body))
 
-	// fmt.Printf("Pushing %d-byte LedgerRequest %s %s\n", len(lr.Body), lr.Method, lr.Path)
-
-	resp, err := http.DefaultClient.Do(proxyReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Status %d from %s: %s", resp.StatusCode, url, string(respBody))
-	}
-
-	return nil
+	return err
 }

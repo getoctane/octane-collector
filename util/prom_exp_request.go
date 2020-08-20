@@ -9,7 +9,7 @@ import (
 )
 
 func PrometheusExporterRequest(host string) (map[string]*dto.MetricFamily, error) {
-	bodyBytes, err := HttpRequest("GET", host+"/metrics")
+	bodyBytes, err := HttpRequest("GET", host+"/metrics", nil, nil)
 	if err != nil {
 		return nil, err
 	}
