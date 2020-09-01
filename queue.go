@@ -12,7 +12,7 @@ import (
 const (
 	segmentSize = 50
 
-	bulkPushSize = 100000
+	bulkPushSize = 100
 )
 
 type LedgerRequest struct {
@@ -36,7 +36,14 @@ func LedgerRequestBuilder() interface{} {
 }
 
 func newLedgerPushQueue() (*dque.DQue, error) {
-	return dque.NewOrOpen("ledger-push-queue", queueDir, segmentSize, LedgerRequestBuilder)
+	q, err := dque.NewOrOpen("ledger-push-queue", queueDir, segmentSize, LedgerRequestBuilder)
+	if err != nil {
+		return nil, err
+	}
+	if err := q.TurboOn(); err != nil {
+		return nil, err
+	}
+	return q, nil
 }
 
 func dequeue(q *dque.DQue) (*LedgerRequest, error) {
@@ -49,6 +56,17 @@ func dequeue(q *dque.DQue) (*LedgerRequest, error) {
 		return nil, errors.New("Could not convert dequeued item to LedgerRequest")
 	}
 	return item, nil
+}
+
+func pushOrRequeue(q *dque.DQue, lr *LedgerRequest) error {
+	if err := pushLedgerRequest(lr); err != nil {
+		fmt.Printf("Error pushing to ledger: %s\n", err.Error())
+		if err := q.Enqueue(lr); err != nil {
+			fmt.Printf("Error re-queueing: %s\n", err.Error())
+			return err
+		}
+	}
+	return nil
 }
 
 func startQueue(q *dque.DQue) {
@@ -81,8 +99,8 @@ func startQueue(q *dque.DQue) {
 
 				if !(item.Method == "POST" && item.Path == "/instance/measurements") {
 					// Only measurements are bulk-able
-					if err := pushLedgerRequest(item); err != nil {
-						fmt.Printf("Error (single) pushing: %s\n", err.Error())
+					if err := pushOrRequeue(q, item); err != nil {
+						continue
 					}
 					pushCount++
 
@@ -101,22 +119,23 @@ func startQueue(q *dque.DQue) {
 			}
 
 			for _, bulk := range groupedBulks {
-				bulkStr := ""
+				bulkBytes := []byte{}
 				for _, bodyBytes := range bulk.Bodies {
-					bulkStr += string(bodyBytes)
+					bulkBytes = append(bulkBytes, bodyBytes...)
 				}
+
+				// fmt.Println(string(bulkBytes))
+
+				fmt.Printf("Posting bulk with bytesize of %d\n", len(bulkBytes))
 
 				lr := &LedgerRequest{
 					Method:  bulk.Method,
 					Path:    "/instance/multimeasurements",
 					Headers: bulk.Headers,
-					Body:    []byte(bulkStr),
+					Body:    bulkBytes,
 				}
 
-				// fmt.Println(bulkStr)
-
-				if err := pushLedgerRequest(lr); err != nil {
-					fmt.Printf("Error (bulk) pushing: %s\n", err.Error())
+				if err := pushOrRequeue(q, lr); err != nil {
 					continue
 				}
 
