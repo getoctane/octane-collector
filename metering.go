@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudptio/octane/collector/ledger"
+	"github.com/getoctane/octane-collector/ledger"
 )
 
 const (

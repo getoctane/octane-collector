@@ -1,4 +1,4 @@
-module github.com/cloudptio/octane/collector
+module github.com/getoctane/octane-collector
 
 go 1.13
 
@@ -7,6 +7,7 @@ require (
 	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/joncrlsn/dque v0.0.0-20200308203223-fe4f81ffd1dc
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.10.0
 	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc // indirect
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect

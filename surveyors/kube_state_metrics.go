@@ -2,21 +2,18 @@ package surveyors
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
 	"time"
 
-	"github.com/cloudptio/octane/collector/ledger"
-	"github.com/prometheus/common/expfmt"
+	"github.com/getoctane/octane-collector/ledger"
+	"github.com/getoctane/octane-collector/util"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/tools/clientcmd"
 
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -28,15 +25,7 @@ type K8SMetricsSurveyor struct {
 	ksm string
 }
 
-func NewK8SMetricsSurveyor(kubeconfig string, ksm string) (*K8SMetricsSurveyor, error) {
-	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	k, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
+func NewK8SMetricsSurveyor(cfg *rest.Config, k *kubernetes.Clientset, ksm string) (*K8SMetricsSurveyor, error) {
 	km, err := metricsv.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -44,13 +33,8 @@ func NewK8SMetricsSurveyor(kubeconfig string, ksm string) (*K8SMetricsSurveyor, 
 	return &K8SMetricsSurveyor{k, km, ksm}, nil
 }
 
-func (s *K8SMetricsSurveyor) GetMetricsServerMetrics() ([]*ledger.MeasurementList, error) {
+func (s *K8SMetricsSurveyor) GetMetricsServerMetrics(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
 	podMetricsList, err := s.km.MetricsV1beta1().PodMetricses("").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	nodes, err := s.k.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -156,30 +140,12 @@ func (s *K8SMetricsSurveyor) GetMetricsServerMetrics() ([]*ledger.MeasurementLis
 }
 
 func (s *K8SMetricsSurveyor) GetKubeStateMetrics() ([]*ledger.MeasurementList, error) {
-	url := fmt.Sprintf("%s/metrics", s.ksm)
+	parsed, err := util.PrometheusExporterRequest(s.ksm)
+	if err != nil {
+		return nil, err
+	}
+
 	timestamp := time.Now().UTC().Format(time.RFC3339)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request for url %s: %s", url, err.Error())
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request for url %s: %s", url, err.Error())
-	}
-
-	defer resp.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read body of response: %s", err.Error())
-	}
-
-	var parser expfmt.TextParser
-	parsed, err := parser.TextToMetricFamilies(strings.NewReader(string(bodyBytes)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse prometheus text: %s", err.Error())
-	}
 
 	measurementLists := []*ledger.MeasurementList{}
 	for _, mf := range parsed {
@@ -200,27 +166,30 @@ func (s *K8SMetricsSurveyor) GetKubeStateMetrics() ([]*ledger.MeasurementList, e
 					labels[label.GetName()] = label.GetValue()
 				}
 			}
-			measurmentList := &ledger.MeasurementList{
-				MeterName: metricName,
-				Namespace: namespace,
-				Pod:       pod,
-				Labels:    labels,
-				Measurements: []*ledger.Measurement{
-					&ledger.Measurement{
-						Value: m.GetGauge().GetValue(),
-						Time:  timestamp,
+
+			if value := m.GetGauge().GetValue(); value != 0 {
+				measurementList := &ledger.MeasurementList{
+					MeterName: metricName,
+					Namespace: namespace,
+					Pod:       pod,
+					Labels:    labels,
+					Measurements: []*ledger.Measurement{
+						&ledger.Measurement{
+							Value: value,
+							Time:  timestamp,
+						},
 					},
-				},
+				}
+				measurementLists = append(measurementLists, measurementList)
 			}
-			measurementLists = append(measurementLists, measurmentList)
 		}
 	}
 
 	return measurementLists, nil
 }
 
-func (s *K8SMetricsSurveyor) Survey() ([]*ledger.MeasurementList, error) {
-	metricsServerResult, err := s.GetMetricsServerMetrics()
+func (s *K8SMetricsSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
+	metricsServerResult, err := s.GetMetricsServerMetrics(nodes)
 	if err != nil {
 		return nil, err
 	}
