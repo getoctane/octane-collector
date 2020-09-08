@@ -46,7 +46,7 @@ func init() {
 		panic(fmt.Sprintf("Cannot parse ledger host value '%s'", ledgerHost))
 	}
 	ledgerScheme = u.Scheme
-	ledgerHost = u.Host
+	ledgerHost = u.Host + "/" + u.Path
 
 	queueDir = requireEnvVar("QUEUE_DIR")
 
