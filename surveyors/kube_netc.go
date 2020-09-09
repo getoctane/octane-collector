@@ -13,6 +13,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	io_prometheus_client "github.com/prometheus/client_model/go"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -53,12 +55,17 @@ func NewKubeNetcSurveyor(k *kubernetes.Clientset, hostOverride string) (*KubeNet
 	return &KubeNetcSurveyor{k, hostOverride}, nil
 }
 
-func (s *KubeNetcSurveyor) getKubeNetcMetrics(host string, nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
+type parsedPromMetrics map[string]*io_prometheus_client.MetricFamily
+
+func fetchNetcMetrics(host string) (parsedPromMetrics, error) {
 	parsed, err := util.PrometheusExporterRequest(host)
 	if err != nil {
 		return nil, err
 	}
+	return parsed, nil
+}
 
+func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
 	nodeZones := make(map[string]string)
@@ -68,78 +75,80 @@ func (s *KubeNetcSurveyor) getKubeNetcMetrics(host string, nodes *v1.NodeList) (
 
 	podDataTransferInfo := make(map[string]*dataTransferMeasurements)
 
-	for _, mf := range parsed {
-		metricName := mf.GetName()
+	for _, parsed := range ppms {
+		for _, mf := range parsed {
+			metricName := mf.GetName()
 
-		switch metricName {
-		case "bytes_sent":
-		// case "bytes_recv": -------------- only doing egress for now
-		default:
-			continue
-		}
-		for _, m := range mf.GetMetric() {
-
-			value := m.GetGauge().GetValue()
-
-			if value == 0 {
-				continue
-			}
-
-			labels := make(map[string]string)
-			for _, labelPair := range m.GetLabel() {
-				// Only pass labels with values... otherwise cr@p ton of data
-				if val := labelPair.GetValue(); val != "" {
-					labels[labelPair.GetName()] = val
-				}
-			}
-
-			if labels["source_kind"] != "pod" { // Only want Pods as source
-				continue
-			}
-			if labels["destination_kind"] == "node" { // Don't want to see traffic to Nodes (TODO ?)
-				continue
-			}
-			if strings.HasPrefix(labels["destination_address"], "127.0.0.1") {
-				continue
-			}
-			if strings.HasPrefix(labels["source_address"], "127.0.0.1") {
-				continue
-			}
-
-			podKey := labels["source_namespace"] + "/" + labels["source_name"]
-
-			if _, ok := podDataTransferInfo[podKey]; !ok {
-				podDataTransferInfo[podKey] = newDataTransferMeasurements(labels["source_namespace"], labels["source_name"], timestamp)
-			}
-
-			switch labels["destination_kind"] {
-			case "pod":
-
-				srcZone, ok := nodeZones[labels["source_node"]]
-				if !ok {
-					fmt.Printf("Can't find source zone for node %s?\n", labels["source_node"])
-					continue
-				}
-				dstZone, ok := nodeZones[labels["destination_node"]]
-				if !ok {
-					fmt.Printf("Can't find destination zone for node %s?\n", labels["destination_node"])
-					continue
-				}
-
-				if srcZone == dstZone {
-					podDataTransferInfo[podKey].intraZoneEgress.Measurements[0].Value += value
-				} else {
-					podDataTransferInfo[podKey].interZoneEgress.Measurements[0].Value += value
-				}
-
-			case "":
-
-				podDataTransferInfo[podKey].internetEgress.Measurements[0].Value += value
-
+			switch metricName {
+			case "bytes_sent":
+			// case "bytes_recv": -------------- only doing egress for now
 			default:
 				continue
 			}
+			for _, m := range mf.GetMetric() {
 
+				value := m.GetGauge().GetValue()
+
+				if value == 0 {
+					continue
+				}
+
+				labels := make(map[string]string)
+				for _, labelPair := range m.GetLabel() {
+					// Only pass labels with values... otherwise cr@p ton of data
+					if val := labelPair.GetValue(); val != "" {
+						labels[labelPair.GetName()] = val
+					}
+				}
+
+				if labels["source_kind"] != "pod" { // Only want Pods as source
+					continue
+				}
+				if labels["destination_kind"] == "node" { // Don't want to see traffic to Nodes (TODO ?)
+					continue
+				}
+				if strings.HasPrefix(labels["destination_address"], "127.0.0.1") {
+					continue
+				}
+				if strings.HasPrefix(labels["source_address"], "127.0.0.1") {
+					continue
+				}
+
+				podKey := labels["source_namespace"] + "/" + labels["source_name"]
+
+				if _, ok := podDataTransferInfo[podKey]; !ok {
+					podDataTransferInfo[podKey] = newDataTransferMeasurements(labels["source_namespace"], labels["source_name"], timestamp)
+				}
+
+				switch labels["destination_kind"] {
+				case "pod":
+
+					srcZone, ok := nodeZones[labels["source_node"]]
+					if !ok {
+						fmt.Printf("Can't find source zone for node %s?\n", labels["source_node"])
+						continue
+					}
+					dstZone, ok := nodeZones[labels["destination_node"]]
+					if !ok {
+						fmt.Printf("Can't find destination zone for node %s?\n", labels["destination_node"])
+						continue
+					}
+
+					if srcZone == dstZone {
+						podDataTransferInfo[podKey].intraZoneEgress.Measurements[0].Value += value
+					} else {
+						podDataTransferInfo[podKey].interZoneEgress.Measurements[0].Value += value
+					}
+
+				case "":
+
+					podDataTransferInfo[podKey].internetEgress.Measurements[0].Value += value
+
+				default:
+					continue
+				}
+
+			}
 		}
 	}
 
@@ -160,8 +169,7 @@ func (s *KubeNetcSurveyor) getKubeNetcMetrics(host string, nodes *v1.NodeList) (
 }
 
 func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
-	allResults := []*ledger.MeasurementList{}
-
+	hosts := []string{s.hostOverride}
 	if s.hostOverride == "" {
 		opts := metav1.ListOptions{
 			LabelSelector: "name=kube-netc",
@@ -170,24 +178,23 @@ func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList
 		if err != nil {
 			return nil, err
 		}
+		hosts = make([]string, len(netcPods.Items))
 
-		for _, pod := range netcPods.Items {
-			result, err := s.getKubeNetcMetrics("http://"+pod.Status.PodIP+":9655", nodes)
-
-			if err != nil {
-				fmt.Printf("ERROR: Could not fetch kube-netc metrics from %s -- %s\n", pod.Status.PodIP, err.Error())
-				continue
-			}
-			allResults = append(allResults, result...)
+		for i, pod := range netcPods.Items {
+			hosts[i] = "http://" + pod.Status.PodIP + ":9655"
 		}
-	} else {
-
-		result, err := s.getKubeNetcMetrics(s.hostOverride, nodes)
-		if err != nil {
-			return nil, fmt.Errorf("ERROR: Could not fetch kube-netc metrics from %s -- %s\n", s.hostOverride, err.Error())
-		}
-		allResults = append(allResults, result...)
 	}
 
-	return allResults, nil
+	ppms := make([]parsedPromMetrics, len(hosts))
+
+	for i, host := range hosts {
+		ppm, err := fetchNetcMetrics(host)
+		if err != nil {
+			fmt.Printf("ERROR: Could not fetch kube-netc metrics from %s -- %s\n", host, err.Error())
+			continue
+		}
+		ppms[i] = ppm
+	}
+
+	return s.extrapolateNetcMetrics(ppms, nodes)
 }
