@@ -20,8 +20,8 @@ import (
 )
 
 type KubeNetcSurveyor struct {
-	k            *kubernetes.Clientset
-	hostOverride string
+	k             *kubernetes.Clientset
+	hostsOverride []string
 }
 
 type dataTransferMeasurements struct {
@@ -51,8 +51,8 @@ func newDataTransferMeasurements(namespace string, pod string, timestamp string)
 	}
 }
 
-func NewKubeNetcSurveyor(k *kubernetes.Clientset, hostOverride string) (*KubeNetcSurveyor, error) {
-	return &KubeNetcSurveyor{k, hostOverride}, nil
+func NewKubeNetcSurveyor(k *kubernetes.Clientset, hostsOverride []string) (*KubeNetcSurveyor, error) {
+	return &KubeNetcSurveyor{k, hostsOverride}, nil
 }
 
 type parsedPromMetrics map[string]*io_prometheus_client.MetricFamily
@@ -169,8 +169,8 @@ func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, node
 }
 
 func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
-	hosts := []string{s.hostOverride}
-	if s.hostOverride == "" {
+	hosts := s.hostsOverride
+	if len(hosts) == 0 {
 		opts := metav1.ListOptions{
 			LabelSelector: "name=kube-netc",
 		}

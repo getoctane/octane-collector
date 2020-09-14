@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -27,7 +28,7 @@ var (
 
 	// On a cluster, Pod addresses are discovered dynamically for kube-netc. This
 	// setting allows for overriding that behavior -- useful for dev.
-	kubeNetcHostOverride string
+	kubeNetcHostsOverride []string
 )
 
 func requireEnvVar(varName string) string {
@@ -73,5 +74,6 @@ func init() {
 	enableK8SMetricsSurveyor = os.Getenv("ENABLE_K8S_METRICS_SURVEYOR") == "true"
 	kubeStateMetricsHost = os.Getenv("KUBE_STATE_METRICS_HOST")
 
-	kubeNetcHostOverride = os.Getenv("KUBE_NETC_HOST_OVERRIDE")
+	kubeNetcHostsOverrideStr := os.Getenv("KUBE_NETC_HOSTS_OVERRIDE")
+	kubeNetcHostsOverride = strings.Split(kubeNetcHostsOverrideStr, ",")
 }
