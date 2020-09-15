@@ -1,12 +1,36 @@
 # permissions to allow kube-netc to operate
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  labels:
+    name: kube-netc
+  name: kube-netc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: octane-collector
+  name: octane-collector
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - pods
+  - services
+  verbs:
+  - list
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   namespace: kube-system
-  name: netc-rbac
+  name: kube-netc
 subjects:
   - kind: ServiceAccount
-    name: default
+    name: kube-netc
     namespace: kube-system
 roleRef:
   kind: ClusterRole
@@ -28,12 +52,13 @@ spec:
       labels:
         name: kube-netc
     spec:
+      serviceAccountName: kube-netc
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
       containers:
       - name: kube-netc
-        image:  nirmata/kube-netc
+        image:  us.gcr.io/octane-public/kube-netc:octane-1
         args: ["-v", "info"]
         imagePullPolicy:  Always
         ports:
@@ -66,17 +91,3 @@ spec:
       - name: tmp
         emptyDir: {}
       terminationGracePeriodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    name: kube-netc
-  namespace: kube-system
-  name: kube-netc
-spec:
-  selector:
-    name: kube-netc
-  ports:
-  - port: 9655
-    protocol: TCP

@@ -3,7 +3,6 @@ package surveyors
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/getoctane/octane-collector/ledger"
@@ -65,13 +64,8 @@ func fetchNetcMetrics(host string) (parsedPromMetrics, error) {
 	return parsed, nil
 }
 
-func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
+func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, _ *v1.NodeList) ([]*ledger.MeasurementList, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
-
-	nodeZones := make(map[string]string)
-	for _, node := range nodes.Items {
-		nodeZones[node.Name] = node.Labels["topology.kubernetes.io/zone"]
-	}
 
 	podDataTransferInfo := make(map[string]*dataTransferMeasurements)
 
@@ -104,15 +98,6 @@ func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, node
 				if labels["source_kind"] != "pod" { // Only want Pods as source
 					continue
 				}
-				if labels["destination_kind"] == "node" { // Don't want to see traffic to Nodes (TODO ?)
-					continue
-				}
-				if strings.HasPrefix(labels["destination_address"], "127.0.0.1") {
-					continue
-				}
-				if strings.HasPrefix(labels["source_address"], "127.0.0.1") {
-					continue
-				}
 
 				podKey := labels["source_namespace"] + "/" + labels["source_name"]
 
@@ -120,31 +105,15 @@ func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, node
 					podDataTransferInfo[podKey] = newDataTransferMeasurements(labels["source_namespace"], labels["source_name"], timestamp)
 				}
 
-				switch labels["destination_kind"] {
-				case "pod":
-
-					srcZone, ok := nodeZones[labels["source_node"]]
-					if !ok {
-						fmt.Printf("Can't find source zone for node %s?\n", labels["source_node"])
-						continue
-					}
-					dstZone, ok := nodeZones[labels["destination_node"]]
-					if !ok {
-						fmt.Printf("Can't find destination zone for node %s?\n", labels["destination_node"])
-						continue
-					}
-
-					if srcZone == dstZone {
-						podDataTransferInfo[podKey].intraZoneEgress.Measurements[0].Value += value
-					} else {
-						podDataTransferInfo[podKey].interZoneEgress.Measurements[0].Value += value
-					}
-
-				case "":
-
+				switch labels["traffic_type"] {
+				case "intra_zone":
+					podDataTransferInfo[podKey].intraZoneEgress.Measurements[0].Value += value
+				case "inter_zone":
+					podDataTransferInfo[podKey].interZoneEgress.Measurements[0].Value += value
+				case "internet":
 					podDataTransferInfo[podKey].internetEgress.Measurements[0].Value += value
-
 				default:
+					fmt.Printf("ERROR: Could not interpret traffic type %s\n", labels["traffic_type"])
 					continue
 				}
 

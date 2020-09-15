@@ -19,5 +19,6 @@ rules:
   - ""
   resources:
   - nodes
+  - pods
   verbs:
   - list

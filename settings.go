@@ -75,5 +75,8 @@ func init() {
 	kubeStateMetricsHost = os.Getenv("KUBE_STATE_METRICS_HOST")
 
 	kubeNetcHostsOverrideStr := os.Getenv("KUBE_NETC_HOSTS_OVERRIDE")
-	kubeNetcHostsOverride = strings.Split(kubeNetcHostsOverrideStr, ",")
+	splitFn := func(c rune) bool {
+		return c == ','
+	}
+	kubeNetcHostsOverride = strings.FieldsFunc(kubeNetcHostsOverrideStr, splitFn)
 }
