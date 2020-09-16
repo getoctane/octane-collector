@@ -27,7 +27,7 @@ metadata:
   name: octane-collector
 rules:
   - apiGroups: [""]
-    resources: ["pods", "nodes", "nodes/stats", "namespaces", "persistentvolumeclaims"]
+    resources: ["pods", "nodes", "nodes/stats", "namespaces", "persistentvolumeclaims", "services"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["metrics.k8s.io"]
     resources: ["pods", "nodes"]
@@ -83,6 +83,21 @@ subjects:
   - kind: ServiceAccount
     name: octane-collector
     namespace: octane-collector
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  namespace: kube-system
+  name: kube-netc
+subjects:
+  - kind: ServiceAccount
+    name: octane-collector
+    namespace: octane-collector
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
 ---
 # Role Binding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -153,9 +168,10 @@ spec:
       containers:
         - name: kube-state-metrics
           args:
-            - --metric-whitelist=kube_persistentvolumeclaim_info,kube_pod_spec_volumes_persistentvolumeclaims_info,kube_persistentvolumeclaim_resource_requests_storage_bytes
+            - --metric-whitelist=kube_node_info,kube_node_labels,kube_node_status_capacity,kube_pod_info,kube_pod_labels,kube_pod_container_resource_requests,kube_pod_container_resource_limits,kube_persistentvolumeclaim_info,kube_pod_spec_volumes_persistentvolumeclaims_info,kube_persistentvolumeclaim_resource_requests_storage_bytes
             - --collectors=persistentvolumeclaims
             - --collectors=pods
+            - --collectors=nodes
           imagePullPolicy: IfNotPresent
           image: "quay.io/coreos/kube-state-metrics:v1.9.7"
           ports:
@@ -224,7 +240,7 @@ spec:
             - --logtostderr
             - --secure-port=8443
             - --kubelet-insecure-tls=true
-            # - --kubelet-preferred-address-types=InternalIP # Need for dev only.
+            - --kubelet-preferred-address-types=InternalIP
           ports:
             - containerPort: 8443
               name: https
@@ -273,6 +289,61 @@ spec:
   groupPriorityMinimum: 100
   versionPriority: 100
 ---
+# Kube-netc Daemon Set
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-netc
+  namespace: octane-collector
+spec:
+  selector:
+    matchLabels:
+      name: kube-netc
+  template:
+    metadata:
+      labels:
+        name: kube-netc
+    spec:
+      serviceAccountName: octane-collector
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: kube-netc
+        image:  us.gcr.io/octane-public/kube-netc:latest
+        args: ["-v", "info"]
+        imagePullPolicy:  Always
+        ports:
+        - containerPort: 2112
+          protocol: TCP
+        - containerPort: 9655
+          protocol: TCP
+        resources: {}
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: debug
+            mountPath: /sys/kernel/debug
+          - name: bpf
+            mountPath: /sys/fs/bpf
+          - name: cgroup
+            mountPath: /sys/fs/cgroup
+          - name: tmp
+            mountPath: /tmp
+      volumes:
+      - name: bpf
+        hostPath:
+          path: /sys/fs/bpf
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      - name: debug
+        hostPath:
+          path: /sys/kernel/debug
+      - name: tmp
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10
+---
 # Octane Collector Service
 apiVersion: v1
 kind: Service
@@ -311,7 +382,7 @@ spec:
       serviceAccountName: octane-collector
       containers:
         - name: ledger
-          image: "us.gcr.io/octane-public/octane-collector:0.0.1"
+          image: "us.gcr.io/octane-public/octane-collector:latest"
           imagePullPolicy: Always
           env:
             - name: LEDGER_HOST
