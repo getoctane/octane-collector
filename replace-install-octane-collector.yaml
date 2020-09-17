@@ -397,6 +397,8 @@ spec:
               value: "http://kube-state-metrics:8080"
             - name: ENABLE_K8S_METRICS_SURVEYOR
               value: "true"
+            - name: KUBE_NETC_NAMESPACE_OVERRIDE
+              value: octane-collector
           ports:
             - containerPort: 8081
           volumeMounts:

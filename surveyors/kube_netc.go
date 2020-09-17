@@ -19,8 +19,9 @@ import (
 )
 
 type KubeNetcSurveyor struct {
-	k             *kubernetes.Clientset
-	hostsOverride []string
+	k                 *kubernetes.Clientset
+	namespaceOverride string
+	hostsOverride     []string
 }
 
 type dataTransferMeasurements struct {
@@ -50,8 +51,8 @@ func newDataTransferMeasurements(namespace string, pod string, timestamp string)
 	}
 }
 
-func NewKubeNetcSurveyor(k *kubernetes.Clientset, hostsOverride []string) (*KubeNetcSurveyor, error) {
-	return &KubeNetcSurveyor{k, hostsOverride}, nil
+func NewKubeNetcSurveyor(k *kubernetes.Clientset, namespaceOverride string, hostsOverride []string) (*KubeNetcSurveyor, error) {
+	return &KubeNetcSurveyor{k, namespaceOverride, hostsOverride}, nil
 }
 
 type parsedPromMetrics map[string]*io_prometheus_client.MetricFamily
@@ -140,10 +141,14 @@ func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, _ *v
 func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
 	hosts := s.hostsOverride
 	if len(hosts) == 0 {
+		namespace := s.namespaceOverride
+		if namespace == "" {
+			namespace = "kube-system"
+		}
 		opts := metav1.ListOptions{
 			LabelSelector: "name=kube-netc",
 		}
-		netcPods, err := s.k.CoreV1().Pods("kube-system").List(context.Background(), opts)
+		netcPods, err := s.k.CoreV1().Pods(namespace).List(context.Background(), opts)
 		if err != nil {
 			return nil, err
 		}

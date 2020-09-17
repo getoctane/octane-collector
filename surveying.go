@@ -44,7 +44,7 @@ func startSurveying(lc *ledger.Client) {
 		panic(err)
 	}
 
-	netcSurveyor, err := surveyors.NewKubeNetcSurveyor(k, kubeNetcHostsOverride)
+	netcSurveyor, err := surveyors.NewKubeNetcSurveyor(k, kubeNetcNamespaceOverride, kubeNetcHostsOverride)
 	if err != nil {
 		panic(err)
 	}
