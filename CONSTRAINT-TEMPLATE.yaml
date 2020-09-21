@@ -1,0 +1,97 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: octanespendratecap
+spec:
+  crd:
+    spec:
+      names:
+        kind: OctaneSpendRateCap
+        listKind: OctaneSpendRateCapList
+        plural: octanespendratecaps
+        singular: octanespendratecap
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          required:
+          - octaneApiKey
+          - accountName
+          - maxSpendRateAmount
+          - maxSpendRatePeriodMinutes
+          properties:
+            octaneCollectorHost:
+              type: string
+            octaneApiKey:
+              type: string
+            accountName:
+              type: string
+            maxSpendRateAmount:
+              type: integer
+            maxSpendRatePeriodMinutes:
+              type: integer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+
+      libs:
+      - |
+        package lib.helpers
+
+        # has_field returns whether an object has a field
+        has_field(object, field) = true {
+          object[field]
+        }
+
+        # False is a tricky special case, as false responses would create an undefined document unless
+        # they are explicitly tested for
+        has_field(object, field) = true {
+          object[field] == false
+        }
+
+        has_field(object, field) = false {
+          not object[field]
+          not object[field] == false
+        }
+
+        # get_default returns the value of an object's field or the provided default value.
+        # It avoids creating an undefined state when trying to access an object attribute that does
+        # not exist
+        get_default(object, field, _default) = output {
+          has_field(object, field)
+          output = object[field]
+        }
+
+        get_default(object, field, _default) = output {
+          has_field(object, field) == false
+          output = _default
+        }
+
+      rego: |
+        package octanespendratecap
+
+        import data.lib.helpers
+
+        violation[{"msg": msg, "details": {"current_spend_per_minute": currentSpendPerMinute, "max_spend_per_minute": maxSpendPerMinute}}] {
+
+          octaneCollectorHost := helpers.get_default(input.parameters, "octaneCollectorHost", "http://octane-collector.default:8081")
+
+          query := urlquery.encode(json.marshal({
+            "account_name": input.parameters.accountName,
+          }))
+          resp := http.send({
+            "method": "get",
+            "url": sprintf("%s/account/costs?args=%s", [octaneCollectorHost, query]),
+            "force_json_decode": true,
+            "headers": {
+              "Authorization": input.parameters.octaneApiKey,
+            },
+          })
+
+          currentSpendPerHourCents := resp.body.cost_per_hour * 100
+          currentSpendPerMinute := currentSpendPerHourCents / 60
+
+          maxSpendPerMinute := input.parameters.maxSpendRateAmount / input.parameters.maxSpendRatePeriodMinutes
+
+          currentSpendPerMinute > maxSpendPerMinute
+
+          msg := sprintf("Current spend per minute (%v) is above max spend per minute (%v)", [currentSpendPerMinute, maxSpendPerMinute])
+        }

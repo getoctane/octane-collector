@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getoctane/octane-collector/util"
 	"github.com/joncrlsn/dque"
 )
 
@@ -60,6 +61,15 @@ func dequeue(q *dque.DQue) (*LedgerRequest, error) {
 
 func pushOrRequeue(q *dque.DQue, lr *LedgerRequest) error {
 	if _, err := pushLedgerRequest(lr); err != nil {
+
+		// TODO(ben): We should probably check for 502 or 503 here, just to make
+		// sure we re-queue when we get (likely from a LoadBalancer) HTTP errors
+		// that represent connection errors to the backend.
+		if errHTTP, isHTTP := err.(*util.ErrorHTTP); isHTTP {
+			fmt.Printf("Error HTTP pushing to ledger (won't re-queue): %s\n", errHTTP.Error())
+			return errHTTP
+		}
+
 		fmt.Printf("Error pushing to ledger: %s\n", err.Error())
 		if err := q.Enqueue(lr); err != nil {
 			fmt.Printf("Error re-queueing: %s\n", err.Error())

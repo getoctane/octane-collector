@@ -3,7 +3,7 @@
 
 # Octane: Kubernetes Cost Engine
 
-Octane helps Development Teams easily  **manage their cloud spend on Kubernetes**. Octane provides detailed cost attribution of running infrastructure (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods). 
+Octane helps Development Teams easily  **manage their cloud spend on Kubernetes**. Octane provides detailed cost attribution of running infrastructure (e.g. cpu, mem, storage) to Kubernetes resources (clusters, namespaces, pods).
 
 Octane makes it easy to get a real time view into financial spend on your cloud infrastructure. It works on any main cloud provider (AWS, GCP, Azure).
 
@@ -14,22 +14,22 @@ Octane makes it easy to get a real time view into financial spend on your cloud 
   - Filter spend by pod, namespace, cluster
   - Filter spend by Compute and Storage
   - Get % cost changes day over day
-  - Cost attribution by Teams (e.g. Security Team spent $400 today) 
-  - GPU Attribution per pod (** Coming Soon **)
-  - Data Transfer Costs (** Coming Soon **)
+  - Cost attribution by Teams (e.g. Security Team spent $400 today)
+  - GPU Attribution per pod
+  - Data Transfer Costs
 
 ## Installation
 
-Reach out to support@getoctane.io to get an OCTANE_CLUSTER_KEY to begin using the cost engine. Replace the OCTANE_CLUSTER_KEY with the octane key provided by support. Then execute the command:
+Reach out to support@getoctane.io to get an Octane _cluster key_ to begin using
+the cost engine. Replace OCTANE_CLUSTER_KEY with the octane key provided by
+support and execute the following command:
 
 ```bash
-sed -e "s/REPLACE_CLUSTER_KEY/OCTANE_CLUSTER_KEY/" < replace-install-octane-collector.yaml > install-octane-collector.yaml
+helm install octane-collector ./helm/charts/collector \
+  --set ledgerHost=https://api.demo.getoctane.io \
+  --set clusterKey=OCTANE_CLUSTER_KEY
 ```
 
-Once you have updated the yaml file with the appropriate octane key, install octane into your cluster to begin getting cost:
-```bash
-kubectl apply -f install-octane-collector.yaml
-```
 ## Usage
 
 1) Head over to https://cloud.getoctane.io

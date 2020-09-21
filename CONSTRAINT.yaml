@@ -1,0 +1,33 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: OctaneSpendRateCap
+metadata:
+  name: team-a-ns-spend-cap
+spec:
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds:
+      - Pod
+      - PersistentVolume
+      - ReplicationController
+    - apiGroups: ["extensions", "apps"]
+      kinds:
+      - Deployment
+      - StatefulSet
+      - DaemonSet
+      - ReplicaSet
+      - Job
+      - CronJob
+    # Pods are namespaced, PVs are not. So we need both scopes.
+    scope: "*"
+    # This is how we're selecting WHO this spending cap applies to -- via
+    # namespace selector.
+    namespaces:
+    - team-a
+  parameters:
+    octaneApiKey: 57665e38018765ff729781695e3ca7a7f869f6ca19d7f3a2b461fd91e19f9c4e
+    accountName: "Octane Services"
+    # This is in cents (or the smallest currency unit)
+    maxSpendRateAmount: 100
+    # $1.00 / day
+    maxSpendRatePeriodMinutes: 1440
