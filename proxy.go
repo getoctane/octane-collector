@@ -59,11 +59,15 @@ func (p *proxy) proxyHandler(w http.ResponseWriter, req *http.Request) {
 
 	// For GET queries, we want to immediately return the response from Ledger
 
+	fmt.Printf("%s %s %s\n", lr.Method, lr.Path, string(lr.Body))
+
 	respBody, err := pushLedgerRequest(lr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Printf("\t%s\n", string(respBody))
 
 	w.WriteHeader(200)
 	w.Write(respBody)
@@ -76,10 +80,10 @@ func pushLedgerRequest(lr *LedgerRequest) ([]byte, error) {
 	// We may want to filter some headers, otherwise we could just use a shallow
 	// copy proxyReq.Header = req.Header
 	headers := make(http.Header)
+	headers.Set("Authorization", clusterKey)
 	for h, val := range lr.Headers {
 		headers[h] = val
 	}
-	headers.Set("Authorization", clusterKey)
 
 	return util.HttpRequest(lr.Method, url, headers, bytes.NewReader(lr.Body))
 }

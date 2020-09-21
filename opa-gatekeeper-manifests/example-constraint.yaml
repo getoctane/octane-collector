@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: OctaneSpendRateCap
+metadata:
+  name: ahmed-ns-spend-cap
+spec:
+  match:
+    kinds:
+    - apiGroups: [""]
+      kinds:
+      - Pod
+      - PersistentVolume
+      - ReplicationController
+    - apiGroups: ["extensions", "apps"]
+      kinds:
+      - Deployment
+      - StatefulSet
+      - DaemonSet
+      - ReplicaSet
+      - Job
+      - CronJob
+    # Pods are namespaced, PVs are not. So we need both scopes.
+    scope: "*"
