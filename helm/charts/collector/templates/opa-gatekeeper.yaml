@@ -1,3 +1,4 @@
+{{ if .Values.opaGatekeeperEnabled }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -842,3 +843,4 @@ webhooks:
     - namespaces
   sideEffects: None
   timeoutSeconds: 5
+{{ end }}

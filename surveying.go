@@ -53,6 +53,8 @@ func startSurveying(lc *ledger.Client) {
 	allS = append(allS, netcSurveyor)
 
 	for {
+		// Sleep first so we give kube-state-metrics a chance to start
+		time.Sleep(surveyingInterval)
 
 		// Fetch Nodes once for all surveyors (which may or may not need them)
 		nodes, err := k.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
@@ -68,8 +70,6 @@ func startSurveying(lc *ledger.Client) {
 			}
 
 		}
-
-		time.Sleep(surveyingInterval)
 	}
 }
 

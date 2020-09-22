@@ -12,3 +12,5 @@ queue:
   pushIntervalMinutes: 1
 
 enableK8SMetricsSurveyor: "true"
+
+opaGatekeeperEnabled: false

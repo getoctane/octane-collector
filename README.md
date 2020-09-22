@@ -27,7 +27,17 @@ support and execute the following command:
 ```bash
 helm install octane-collector ./helm/charts/collector \
   --set ledgerHost=https://api.demo.getoctane.io \
-  --set clusterKey=OCTANE_CLUSTER_KEY
+  --set clusterKey=OCTANE_CLUSTER_KEY \
+  --set opaGatekeeperEnabled=true # (if you want the budget constraint)
+```
+
+#### Budget constraint setup
+
+```bash
+kubectl apply -f opa-gatekeeper-manifests/constraint-template.yaml
+
+# This is just an example manifest. You will need to update the namespaces to target.
+kubectl apply -f opa-gatekeeper-manifests/example-constraint.yaml
 ```
 
 ## Usage

@@ -59,11 +59,15 @@ func (p *proxy) proxyHandler(w http.ResponseWriter, req *http.Request) {
 
 	// For GET queries, we want to immediately return the response from Ledger
 
+	fmt.Printf("%s %s %s\n", lr.Method, lr.Path, string(lr.Body))
+
 	respBody, err := pushLedgerRequest(lr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Printf("\t%s\n", string(respBody))
 
 	w.WriteHeader(200)
 	w.Write(respBody)
