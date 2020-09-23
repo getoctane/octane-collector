@@ -2,7 +2,7 @@ namespace: default
 
 image:
   repository: us.gcr.io/octane-public/octane-collector
-  tag: 0.0.1
+  tag: 0.0.2
 
 ledgerHost: "http://octane-ledger:8080"
 
