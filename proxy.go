@@ -41,18 +41,35 @@ func (p *proxy) proxyHandler(w http.ResponseWriter, req *http.Request) {
 		Headers: req.Header,
 	}
 
-	// fmt.Printf("Enqueueing %d-byte LedgerRequest %s %s\n", len(body), lr.Method, lr.Path)
+	// We will enqueue POST requests
 
-	if err := p.q.Enqueue(lr); err != nil {
+	if lr.Method != "GET" {
+		// fmt.Printf("Enqueueing %d-byte LedgerRequest %s %s\n", len(body), lr.Method, lr.Path)
+
+		if err := p.q.Enqueue(lr); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(200)
+		fmt.Fprint(w, `{"acknowledged": true}`)
+
+		return
+	}
+
+	// For GET queries, we want to immediately return the response from Ledger
+
+	respBody, err := pushLedgerRequest(lr)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(200)
-	fmt.Fprint(w, `{"acknowledged": true}`)
+	w.Write(respBody)
 }
 
-func pushLedgerRequest(lr *LedgerRequest) error {
+func pushLedgerRequest(lr *LedgerRequest) ([]byte, error) {
 	// create a new url from the raw RequestURI sent by the client
 	url := fmt.Sprintf("%s://%s%s", ledgerScheme, ledgerHost, lr.Path)
 
@@ -64,7 +81,5 @@ func pushLedgerRequest(lr *LedgerRequest) error {
 	}
 	headers.Set("Authorization", clusterKey)
 
-	_, err := util.HttpRequest(lr.Method, url, headers, bytes.NewReader(lr.Body))
-
-	return err
+	return util.HttpRequest(lr.Method, url, headers, bytes.NewReader(lr.Body))
 }

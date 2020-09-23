@@ -59,7 +59,7 @@ func dequeue(q *dque.DQue) (*LedgerRequest, error) {
 }
 
 func pushOrRequeue(q *dque.DQue, lr *LedgerRequest) error {
-	if err := pushLedgerRequest(lr); err != nil {
+	if _, err := pushLedgerRequest(lr); err != nil {
 		fmt.Printf("Error pushing to ledger: %s\n", err.Error())
 		if err := q.Enqueue(lr); err != nil {
 			fmt.Printf("Error re-queueing: %s\n", err.Error())
