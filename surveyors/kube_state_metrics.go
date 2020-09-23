@@ -6,15 +6,14 @@ import (
 
 	"github.com/getoctane/octane-collector/ledger"
 	"github.com/getoctane/octane-collector/util"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -43,14 +42,14 @@ func (s *K8SMetricsSurveyor) GetMetricsServerMetrics(nodes *v1.NodeList) ([]*led
 
 	measurementLists := []*ledger.MeasurementList{}
 
-	nodeTypes := make(map[string][]corev1.Node)
+	nodeTypes := make(map[string][]v1.Node)
 	for _, node := range nodes.Items {
 		nodeType := node.Labels["beta.kubernetes.io/instance-type"]
 		if _, exists := nodeTypes[nodeType]; exists {
 			nodeTypes[nodeType] = append(nodeTypes[nodeType], node)
 			continue
 		}
-		nodeTypes[nodeType] = []corev1.Node{node}
+		nodeTypes[nodeType] = []v1.Node{node}
 	}
 
 	for _, nodes := range nodeTypes {

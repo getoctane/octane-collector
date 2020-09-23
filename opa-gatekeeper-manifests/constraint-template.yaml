@@ -1,0 +1,83 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: octanespendratecap
+spec:
+  crd:
+    spec:
+      names:
+        kind: OctaneSpendRateCap
+        listKind: OctaneSpendRateCapList
+        plural: octanespendratecaps
+        singular: octanespendratecap
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          properties:
+            octaneCollectorHost:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+
+      libs:
+      - |
+        package lib.helpers
+
+        # has_field returns whether an object has a field
+        has_field(object, field) = true {
+          object[field]
+        }
+
+        # False is a tricky special case, as false responses would create an undefined document unless
+        # they are explicitly tested for
+        has_field(object, field) = true {
+          object[field] == false
+        }
+
+        has_field(object, field) = false {
+          not object[field]
+          not object[field] == false
+        }
+
+        # get_default returns the value of an object's field or the provided default value.
+        # It avoids creating an undefined state when trying to access an object attribute that does
+        # not exist
+        get_default(object, field, _default) = output {
+          has_field(object, field)
+          output = object[field]
+        }
+
+        get_default(object, field, _default) = output {
+          has_field(object, field) == false
+          output = _default
+        }
+
+      rego: |
+        package octanespendratecap
+
+        import data.lib.helpers
+
+        violation[{"msg": msg}] {
+
+          octaneCollectorHost := helpers.get_default(input.parameters, "octaneCollectorHost", "http://octane-collector.default:8081")
+
+          body := {
+            "namespace": input.review.object.metadata.namespace,
+            "pod": input.review.object.metadata.name,
+            "labels": input.review.object.metadata.labels,
+          }
+
+          resp := http.send({
+            "method": "get",
+            "url": sprintf("%s/instance/check_account_budgets", [octaneCollectorHost]),
+            "force_json_decode": true,
+            "headers": {
+              "Content-Type": "application/json",
+            },
+            "body": body,
+          })
+
+          resp.body.status == false
+
+          msg := "Your account is currently violating a budget constraint."
+        }

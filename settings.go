@@ -17,6 +17,9 @@ var (
 	queueDir                 string
 	queuePushIntervalMinutes uint16
 
+	surveyingIntervalMinutes uint16
+	meteringIntervalMinutes  uint16
+
 	// Required for Prometheus-type meter queries
 	prometheusHost string
 
@@ -40,6 +43,19 @@ func requireEnvVar(varName string) string {
 	return val
 }
 
+func parseIntSettingWithDefault(varName string, def uint16) uint16 {
+	value := def
+	str := os.Getenv(varName)
+	if str != "" {
+		parsed, err := strconv.ParseUint(str, 10, 16)
+		if err != nil {
+			panic(err)
+		}
+		value = uint16(parsed)
+	}
+	return value
+}
+
 func init() {
 	ledgerHost = requireEnvVar("LEDGER_HOST")
 	clusterKey = requireEnvVar("CLUSTER_KEY")
@@ -56,17 +72,15 @@ func init() {
 
 	queueDir = requireEnvVar("QUEUE_DIR")
 
-	queuePushIntervalMinutes = 1 // default
+	queuePushIntervalMinutes = parseIntSettingWithDefault("QUEUE_PUSH_INTERVAL_MINS", 1)
+	fmt.Printf("Setting queuePushIntervalMinutes to %d\n", queuePushIntervalMinutes)
 
-	pushIntervalStr := os.Getenv("QUEUE_PUSH_INTERVAL_MINS")
-	if pushIntervalStr != "" {
-		parsedInterval, err := strconv.ParseUint(pushIntervalStr, 10, 16)
-		if err != nil {
-			panic(err)
-		}
-		queuePushIntervalMinutes = uint16(parsedInterval)
-	}
-	fmt.Printf("Setting queue push interval to %d minutes\n", queuePushIntervalMinutes)
+	// These will both default to the push interval minutes
+	surveyingIntervalMinutes = parseIntSettingWithDefault("SURVEYING_INTERVAL_MINS", queuePushIntervalMinutes)
+	fmt.Printf("Setting surveyingIntervalMinutes to %d\n", surveyingIntervalMinutes)
+
+	meteringIntervalMinutes = parseIntSettingWithDefault("METERING_INTERVAL_MINS", queuePushIntervalMinutes)
+	fmt.Printf("Setting meteringIntervalMinutes to %d\n", meteringIntervalMinutes)
 
 	prometheusHost = os.Getenv("PROMETHEUS_HOST")
 

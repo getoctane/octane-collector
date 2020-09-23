@@ -7,11 +7,6 @@ import (
 	"github.com/getoctane/octane-collector/ledger"
 )
 
-const (
-	// this determines how frequently to collect Measurements from Meters
-	meteringInterval = time.Minute
-)
-
 type meterer struct {
 	lc *ledger.Client
 }
@@ -20,7 +15,7 @@ func startMetering(lc *ledger.Client) {
 	m := &meterer{lc}
 	for {
 		m.meter()
-		time.Sleep(meteringInterval)
+		time.Sleep(time.Duration(meteringIntervalMinutes) * time.Minute)
 	}
 }
 
