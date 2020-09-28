@@ -72,7 +72,7 @@ spec:
     spec:
       serviceAccountName: octane-collector
       containers:
-        - name: ledger
+        - name: collector
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: Always
           env:
@@ -90,8 +90,8 @@ spec:
               value: /queue
             - name: KUBE_STATE_METRICS_HOST
               value: "http://kube-state-metrics.kube-system:8080"
-            - name: ENABLE_K8S_METRICS_SURVEYOR
-              value: "{{ .Values.enableK8SMetricsSurveyor }}"
+            - name: ENABLE_SURVEYORS
+              value: "{{ .Values.enableSurveyors }}"
           ports:
             - containerPort: 8081
           volumeMounts:

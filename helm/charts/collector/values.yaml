@@ -14,6 +14,6 @@ queue:
 surveyingIntervalMinutes: 1
 meteringIntervalMinutes: 1
 
-enableK8SMetricsSurveyor: "true"
+enableSurveyors: "true"
 
 opaGatekeeperEnabled: false

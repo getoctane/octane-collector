@@ -18,7 +18,7 @@ func main() {
 
 	go startProxy(q)
 
-	if enableK8SMetricsSurveyor {
+	if enableSurveyors {
 		go startSurveying(lc)
 	}
 

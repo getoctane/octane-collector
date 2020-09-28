@@ -26,8 +26,8 @@ var (
 	// Only required for testing K8S-based Surveyors in development
 	kubeconfig string
 
-	enableK8SMetricsSurveyor bool
-	kubeStateMetricsHost     string // Required for surveying kube-state-metrics
+	enableSurveyors      bool
+	kubeStateMetricsHost string // Required for surveying kube-state-metrics
 
 	// On a cluster, Pod addresses are discovered dynamically for kube-netc. This
 	// setting allows for overriding that behavior -- useful for dev.
@@ -86,7 +86,8 @@ func init() {
 
 	kubeconfig = os.Getenv("KUBECONFIG")
 
-	enableK8SMetricsSurveyor = os.Getenv("ENABLE_K8S_METRICS_SURVEYOR") == "true"
+	// Default true
+	enableSurveyors = os.Getenv("ENABLE_SURVEYORS") != "false"
 	kubeStateMetricsHost = os.Getenv("KUBE_STATE_METRICS_HOST")
 
 	kubeNetcNamespaceOverride = os.Getenv("KUBE_NETC_NAMESPACE_OVERRIDE")

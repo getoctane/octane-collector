@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -59,8 +60,12 @@ func dequeue(q *dque.DQue) (*LedgerRequest, error) {
 	return item, nil
 }
 
+type acknowledgement struct {
+	Success bool `json:"success"`
+}
+
 func pushOrRequeue(q *dque.DQue, lr *LedgerRequest) error {
-	if _, err := pushLedgerRequest(lr); err != nil {
+	if respBody, err := pushLedgerRequest(lr); err != nil {
 
 		// TODO(ben): We should probably check for 502 or 503 here, just to make
 		// sure we re-queue when we get (likely from a LoadBalancer) HTTP errors
@@ -68,6 +73,27 @@ func pushOrRequeue(q *dque.DQue, lr *LedgerRequest) error {
 		if errHTTP, isHTTP := err.(*util.ErrorHTTP); isHTTP {
 			fmt.Printf("Error HTTP pushing to ledger (won't re-queue): %s\n", errHTTP.Error())
 			return errHTTP
+		}
+
+		fmt.Println(string(respBody))
+
+		dst := []*acknowledgement{}
+		if jsonErr := json.Unmarshal(respBody, &dst); jsonErr != nil {
+			retErr := fmt.Errorf("Error unmarshalling JSON response from multi-measurements: %s", jsonErr.Error())
+			fmt.Println(retErr)
+			return retErr
+		}
+		allGood := true
+		for _, ack := range dst {
+			if !ack.Success {
+				allGood = false
+				break
+			}
+		}
+		if !allGood {
+			badErr := fmt.Errorf("Partial failure: %s\n", string(respBody))
+			fmt.Println(badErr)
+			return badErr
 		}
 
 		fmt.Printf("Error pushing to ledger: %s\n", err.Error())
@@ -140,7 +166,7 @@ func startQueue(q *dque.DQue) {
 
 				lr := &LedgerRequest{
 					Method:  bulk.Method,
-					Path:    "/instance/multimeasurements",
+					Path:    "/instance/multimeasurements/v2",
 					Headers: bulk.Headers,
 					Body:    bulkBytes,
 				}

@@ -18,15 +18,13 @@ func (m *Meter) Name() string {
 }
 
 type Measurement struct {
-	// MeterID int64   `json:"meter_id"`
-	// Entity string  `json:"entity"`
-	Value float64 `json:"value"`
-	Time  string  `json:"time"`
+	MeterID   int64   `json:"meter_id,omitempty"`
+	MeterName string  `json:"meter_name,omitempty"`
+	Value     float64 `json:"value"`
+	Time      string  `json:"time"`
 }
 
 type MeasurementList struct {
-	MeterID      int64             `json:"meter_id,omitempty"`
-	MeterName    string            `json:"meter_name,omitempty"`
 	Namespace    string            `json:"namespace,omitempty"`
 	Pod          string            `json:"pod,omitempty"`
 	Labels       map[string]string `json:"labels,omitempty"`

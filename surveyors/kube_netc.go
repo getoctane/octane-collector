@@ -9,7 +9,7 @@ import (
 	"github.com/getoctane/octane-collector/util"
 
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
-	v1 "k8s.io/api/core/v1"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	io_prometheus_client "github.com/prometheus/client_model/go"
@@ -32,12 +32,12 @@ type dataTransferMeasurements struct {
 
 func newMeasurementListForPod(meterName string, namespace string, pod string, timestamp string) *ledger.MeasurementList {
 	return &ledger.MeasurementList{
-		MeterName: meterName,
 		Namespace: namespace,
 		Pod:       pod,
 		Measurements: []*ledger.Measurement{
 			&ledger.Measurement{
-				Time: timestamp,
+				Time:      timestamp,
+				MeterName: meterName,
 			},
 		},
 	}
@@ -65,7 +65,7 @@ func fetchNetcMetrics(host string) (parsedPromMetrics, error) {
 	return parsed, nil
 }
 
-func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, _ *v1.NodeList) ([]*ledger.MeasurementList, error) {
+func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics) ([]*ledger.MeasurementList, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
 	podDataTransferInfo := make(map[string]*dataTransferMeasurements)
@@ -138,7 +138,7 @@ func (s *KubeNetcSurveyor) extrapolateNetcMetrics(ppms []parsedPromMetrics, _ *v
 	return measurementLists, nil
 }
 
-func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList, error) {
+func (s *KubeNetcSurveyor) Survey() ([]*ledger.MeasurementList, error) {
 	hosts := s.hostsOverride
 	if len(hosts) == 0 {
 		namespace := s.namespaceOverride
@@ -170,5 +170,5 @@ func (s *KubeNetcSurveyor) Survey(nodes *v1.NodeList) ([]*ledger.MeasurementList
 		ppms[i] = ppm
 	}
 
-	return s.extrapolateNetcMetrics(ppms, nodes)
+	return s.extrapolateNetcMetrics(ppms)
 }

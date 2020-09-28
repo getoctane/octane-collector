@@ -38,7 +38,7 @@ func HttpRequest(method string, url string, headers http.Header, body io.Reader)
 	}
 
 	switch resp.StatusCode {
-	case 401, 404:
+	case 401, 404, 500:
 		return nil, &ErrorHTTP{resp.StatusCode, string(bodyBytes)}
 	}
 

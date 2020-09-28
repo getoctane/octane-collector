@@ -32,13 +32,11 @@ func (c *Client) CreateMeasurement(meter *Meter, timestamp string, units float64
 	measurements := &MeasurementList{
 		Measurements: []*Measurement{
 			&Measurement{
-				Value: units,
-				Time:  timestamp,
+				Value:   units,
+				Time:    timestamp,
+				MeterID: meter.ID,
 			},
 		},
-	}
-	if meter != nil {
-		measurements.MeterID = meter.ID
 	}
 	return c.PostMeasurementList(measurements)
 }
