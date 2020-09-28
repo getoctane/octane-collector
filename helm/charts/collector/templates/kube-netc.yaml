@@ -43,7 +43,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: kube-netc
-        image:  us.gcr.io/octane-public/kube-netc:octane-1
+        image:  us.gcr.io/octane-public/kube-netc:octane-2
         args: ["-v", "info"]
         imagePullPolicy:  Always
         ports:
