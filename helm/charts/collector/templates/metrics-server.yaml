@@ -4,12 +4,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: metrics-server
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 ---
 # Source: metrics-server/templates/aggregated-metrics-reader-cluster-role.yaml
 kind: ClusterRole
@@ -18,9 +15,6 @@ metadata:
   name: system:metrics-server-aggregated-reader
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
@@ -36,9 +30,6 @@ metadata:
   name: system:metrics-server
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 rules:
   - apiGroups:
     - ""
@@ -59,9 +50,6 @@ metadata:
   name: metrics-server:system:auth-delegator
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -69,7 +57,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: metrics-server
-    namespace: kube-system
+    namespace: "{{ .Values.namespace }}"
 ---
 # Source: metrics-server/templates/metrics-server-crb.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -78,9 +66,6 @@ metadata:
   name: system:metrics-server
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -88,19 +73,16 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: metrics-server
-    namespace: kube-system
+    namespace: "{{ .Values.namespace }}"
 ---
 # Source: metrics-server/templates/role-binding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: metrics-server-auth-reader
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -108,19 +90,16 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: metrics-server
-    namespace: kube-system
+    namespace: "{{ .Values.namespace }}"
 ---
 # Source: metrics-server/templates/metric-server-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: metrics-server
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
   annotations:
     {}
 spec:
@@ -138,12 +117,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: metrics-server
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 spec:
   selector:
     matchLabels:
@@ -195,12 +171,6 @@ spec:
           volumeMounts:
           - name: tmp
             mountPath: /tmp
-      nodeSelector:
-        {}
-      affinity:
-        {}
-      tolerations:
-        []
       volumes:
       - name: tmp
         emptyDir: {}
@@ -212,13 +182,10 @@ metadata:
   name: v1beta1.metrics.k8s.io
   labels:
     app: metrics-server
-    chart: metrics-server-2.11.1
-    release: metrics-server
-    heritage: Helm
 spec:
   service:
     name: metrics-server
-    namespace: kube-system
+    namespace: "{{ .Values.namespace }}"
   group: metrics.k8s.io
   version: v1beta1
   insecureSkipTLSVerify: true

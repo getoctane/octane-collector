@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     name: kube-netc
   name: kube-netc
@@ -11,12 +11,12 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   name: kube-netc
 subjects:
   - kind: ServiceAccount
     name: kube-netc
-    namespace: kube-system
+    namespace: "{{ .Values.namespace }}"
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -27,7 +27,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kube-netc
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
 spec:
   selector:
     matchLabels:

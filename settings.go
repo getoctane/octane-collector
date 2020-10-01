@@ -91,6 +91,7 @@ func init() {
 	kubeStateMetricsHost = os.Getenv("KUBE_STATE_METRICS_HOST")
 
 	kubeNetcNamespaceOverride = os.Getenv("KUBE_NETC_NAMESPACE_OVERRIDE")
+
 	kubeNetcHostsOverrideStr := os.Getenv("KUBE_NETC_HOSTS_OVERRIDE")
 	splitFn := func(c rune) bool {
 		return c == ','

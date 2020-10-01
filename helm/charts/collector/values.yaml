@@ -1,4 +1,4 @@
-namespace: default
+namespace: octane-collector
 
 image:
   repository: us.gcr.io/octane-public/octane-collector

@@ -5,6 +5,7 @@ metadata:
   labels:
     app: octane-collector
   name: octane-collector
+  namespace: "{{ .Values.namespace }}"
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -44,6 +45,7 @@ metadata:
   labels:
     app: octane-collector
   name: octane-collector
+  namespace: "{{ .Values.namespace }}"
 spec:
   selector:
     app: octane-collector
@@ -59,6 +61,7 @@ metadata:
   labels:
     app: octane-collector
   name: octane-collector
+  namespace: "{{ .Values.namespace }}"
 spec:
   replicas: 1
   selector:
@@ -89,9 +92,11 @@ spec:
             - name: QUEUE_DIR
               value: /queue
             - name: KUBE_STATE_METRICS_HOST
-              value: "http://kube-state-metrics.kube-system:8080"
+              value: "http://kube-state-metrics.{{ .Values.namespace }}:8080"
             - name: ENABLE_SURVEYORS
               value: "{{ .Values.enableSurveyors }}"
+            - name: KUBE_NETC_NAMESPACE_OVERRIDE
+              value: "{{ .Values.namespace }}"
           ports:
             - containerPort: 8081
           volumeMounts:

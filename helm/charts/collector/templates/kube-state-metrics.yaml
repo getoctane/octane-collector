@@ -130,7 +130,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -139,7 +139,7 @@ metadata:
   labels:
     app: kube-state-metrics
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
 rules:
 - apiGroups:
   - ""
@@ -163,7 +163,7 @@ metadata:
   labels:
     app: kube-state-metrics
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -179,14 +179,14 @@ metadata:
   labels:
     app: kube-state-metrics
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: kube-state-metrics
   annotations:
@@ -206,7 +206,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kube-state-metrics
-  namespace: kube-system
+  namespace: "{{ .Values.namespace }}"
   labels:
     app: kube-state-metrics
 spec:
