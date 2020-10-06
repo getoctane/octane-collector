@@ -228,9 +228,10 @@ spec:
       containers:
         - name: kube-state-metrics
           args:
-            - --metric-whitelist=kube_persistentvolumeclaim_info,kube_pod_spec_volumes_persistentvolumeclaims_info,kube_persistentvolumeclaim_resource_requests_storage_bytes
+            - --metric-whitelist=kube_node_info,kube_node_labels,kube_node_status_capacity,kube_pod_info,kube_pod_labels,kube_pod_container_resource_requests,kube_pod_container_resource_limits,kube_persistentvolumeclaim_info,kube_pod_spec_volumes_persistentvolumeclaims_info,kube_persistentvolumeclaim_resource_requests_storage_bytes
             - --collectors=persistentvolumeclaims
             - --collectors=pods
+            - --collectors=nodes
           imagePullPolicy: IfNotPresent
           image: "quay.io/coreos/kube-state-metrics:v1.9.7"
           ports:
