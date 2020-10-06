@@ -1,20 +1,18 @@
 ---
-# Source: metrics-server/templates/metrics-server-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: metrics-server
+  name: octane-metrics-server
   namespace: "{{ .Values.namespace }}"
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 ---
-# Source: metrics-server/templates/aggregated-metrics-reader-cluster-role.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: system:metrics-server-aggregated-reader
+  name: system:octane-metrics-server-aggregated-reader
   labels:
-    app: metrics-server
+    app: octane-metrics-server
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
@@ -23,13 +21,12 @@ rules:
     resources: ["pods","nodes"]
     verbs: ["get", "list", "watch"]
 ---
-# Source: metrics-server/templates/cluster-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: system:metrics-server
+  name: system:octane-metrics-server
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 rules:
   - apiGroups:
     - ""
@@ -44,63 +41,59 @@ rules:
       - list
       - watch
 ---
-# Source: metrics-server/templates/auth-delegator-crb.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: metrics-server:system:auth-delegator
+  name: octane-metrics-server:system:auth-delegator
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:auth-delegator
 subjects:
   - kind: ServiceAccount
-    name: metrics-server
+    name: octane-metrics-server
     namespace: "{{ .Values.namespace }}"
 ---
-# Source: metrics-server/templates/metrics-server-crb.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:metrics-server
+  name: system:octane-metrics-server
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:metrics-server
+  name: system:octane-metrics-server
 subjects:
   - kind: ServiceAccount
-    name: metrics-server
+    name: octane-metrics-server
     namespace: "{{ .Values.namespace }}"
 ---
-# Source: metrics-server/templates/role-binding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: metrics-server-auth-reader
+  name: octane-metrics-server-auth-reader
   namespace: "{{ .Values.namespace }}"
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: extension-apiserver-authentication-reader
 subjects:
   - kind: ServiceAccount
-    name: metrics-server
+    name: octane-metrics-server
     namespace: "{{ .Values.namespace }}"
 ---
-# Source: metrics-server/templates/metric-server-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: metrics-server
+  name: octane-metrics-server
   namespace: "{{ .Values.namespace }}"
   labels:
-    app: metrics-server
+    app: octane-metrics-server
   annotations:
     {}
 spec:
@@ -109,33 +102,32 @@ spec:
       protocol: TCP
       targetPort: https
   selector:
-    app: metrics-server
-    release: metrics-server
+    app: octane-metrics-server
+    release: octane-metrics-server
   type: ClusterIP
 ---
-# Source: metrics-server/templates/metrics-server-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metrics-server
+  name: octane-metrics-server
   namespace: "{{ .Values.namespace }}"
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 spec:
   selector:
     matchLabels:
-      app: metrics-server
-      release: metrics-server
+      app: octane-metrics-server
+      release: octane-metrics-server
   replicas: 1
   template:
     metadata:
       labels:
-        app: metrics-server
-        release: metrics-server
+        app: octane-metrics-server
+        release: octane-metrics-server
     spec:
-      serviceAccountName: metrics-server
+      serviceAccountName: octane-metrics-server
       containers:
-        - name: metrics-server
+        - name: octane-metrics-server
           image: "k8s.gcr.io/metrics-server-amd64:v0.3.6"
           imagePullPolicy: IfNotPresent
           command:
@@ -176,16 +168,15 @@ spec:
       - name: tmp
         emptyDir: {}
 ---
-# Source: metrics-server/templates/metrics-api-service.yaml
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
   name: v1beta1.metrics.k8s.io
   labels:
-    app: metrics-server
+    app: octane-metrics-server
 spec:
   service:
-    name: metrics-server
+    name: octane-metrics-server
     namespace: "{{ .Values.namespace }}"
   group: metrics.k8s.io
   version: v1beta1
