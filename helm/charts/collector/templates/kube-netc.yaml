@@ -41,9 +41,10 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+        operator: Exists
       containers:
       - name: kube-netc
-        image:  us.gcr.io/octane-public/kube-netc:octane-2
+        image:  us.gcr.io/octane-public/kube-netc:octane-3
         args: ["-v", "info"]
         imagePullPolicy:  Always
         ports:
