@@ -11,6 +11,11 @@ queue:
   sizeGB: 10
   pushIntervalMinutes: 1
 
+netc:
+  image:
+    repository: us.gcr.io/octane-public/kube-netc
+    tag: octane-4
+
 surveyingIntervalMinutes: 1
 meteringIntervalMinutes: 1
 

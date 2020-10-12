@@ -41,10 +41,11 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
-        operator: Exists
+      # This is a blanket ignore-all taints
+      - operator: Exists
       containers:
       - name: kube-netc
-        image:  us.gcr.io/octane-public/kube-netc:octane-3
+        image: "{{ .Values.netc.image.repository }}:{{ .Values.netc.image.tag }}"
         args: ["-v", "info"]
         imagePullPolicy:  Always
         ports:
