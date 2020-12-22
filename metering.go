@@ -41,7 +41,7 @@ func (m *meterer) meter() {
 			continue
 		}
 
-		units, err := querier.GetUnitsConsumedForPeriod(meter.Value, timespanSecs)
+		units, err := querier.GetUnitsConsumedForPeriod(meter.Query, timespanSecs)
 		if err != nil {
 			fmt.Printf("ERROR Failed to get meter units on Meter %s: %s\n", meter.Name(), err.Error())
 			continue
